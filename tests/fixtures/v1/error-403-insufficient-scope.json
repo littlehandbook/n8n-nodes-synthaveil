@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "schema": "Problem",
+    "endpoint": "/api/v1/tokenize",
+    "method": "POST",
+    "status": 403,
+    "source": "hand-authored from route code, replace via capture-fixtures when staging reachable"
+  },
+  "body": {
+    "type": "https://taas.dev/problems/insufficient_scope",
+    "title": "Insufficient scope",
+    "status": 403,
+    "code": "insufficient_scope",
+    "error": "insufficient_scope",
+    "required_scope": "tokenize:write"
+  }
+}

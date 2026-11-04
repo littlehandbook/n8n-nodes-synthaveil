@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "schema": "BatchRequest",
+    "note": "Golden batch request body the node must build for the determinism (INV-001) test. Two items, fields full_name->l2.synthesize-name, email->l2.synthesize-email; country GB; scope crm-sync. Each item also carries an unmapped internal_id that must NOT appear in any record. Records preserve input order; one shared policy/country/scope applies to all."
+  },
+  "body": {
+    "records": [
+      { "full_name": "Jane Smith", "email": "jane@example.com" },
+      { "full_name": "John Doe", "email": "john@example.com" }
+    ],
+    "policy": {
+      "fields": {
+        "full_name": { "method": "l2.synthesize-name" },
+        "email": { "method": "l2.synthesize-email" }
+      }
+    },
+    "country": "GB",
+    "scope_id": "crm-sync"
+  }
+}

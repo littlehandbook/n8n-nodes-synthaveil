@@ -1,0 +1,32 @@
+{
+  "_meta": {
+    "schema": "UsageResponse",
+    "endpoint": "/api/v1/usage",
+    "method": "GET",
+    "status": 200,
+    "source": "body of the monorepo capture tests/api/fixtures/v1/usage-200.json (captured from staging 2026-07-11, API 17c) plus the active_scopes object src/app/api/v1/usage/route.ts on main sends on every 200 (count hand-set, period copied from the top-level period). Matches main's UsageResponse schema: no remaining, no quota_state; percentage is (used / limit) * 100 to 2 decimals, so 14 of 500000 is 0. Replace via capture-fixtures when production is reachable."
+  },
+  "body": {
+    "tier": "standard",
+    "usage": {
+      "used": 14,
+      "limit": 500000,
+      "percentage": 0
+    },
+    "period": {
+      "start": "2026-07-01T00:00:00+00:00",
+      "end": "2026-08-01T00:00:00+00:00"
+    },
+    "rate_limit": {
+      "burst_per_second": 50
+    },
+    "quota_warning": false,
+    "active_scopes": {
+      "count": 3,
+      "period": {
+        "start": "2026-07-01T00:00:00+00:00",
+        "end": "2026-08-01T00:00:00+00:00"
+      }
+    }
+  }
+}

@@ -1,0 +1,166 @@
+{
+  "name": "CRM Local restore (Synthaveil → AI → Restore, free text round trip)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "d3c3c333-0000-4000-8000-000000000001",
+      "name": "When clicking Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [180, 340]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1000000-0000-4000-8000-000000000001",
+              "name": "name",
+              "type": "string",
+              "value": "Jane Testerson"
+            },
+            {
+              "id": "f1000000-0000-4000-8000-000000000002",
+              "name": "email",
+              "type": "string",
+              "value": "jane.testerson@example.com"
+            },
+            {
+              "id": "f1000000-0000-4000-8000-000000000003",
+              "name": "phone",
+              "type": "string",
+              "value": "+44 7700 900123"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d3c3c333-0000-4000-8000-000000000002",
+      "name": "Sample customer record",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [400, 340]
+    },
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "tokenize",
+        "fieldsToTokenize": {
+          "field": [
+            { "fieldName": "name", "method": "l2.synthesize-name" },
+            { "fieldName": "email", "method": "l2.synthesize-email" },
+            { "fieldName": "phone", "method": "l2.synthesize-phone" }
+          ]
+        },
+        "scopeId": "crm-local-restore-demo",
+        "returnMode": "localRestore",
+        "country": "GB",
+        "outputMode": "replaceInPlace",
+        "retryOnRateLimit": true
+      },
+      "id": "d3c3c333-0000-4000-8000-000000000003",
+      "name": "Synthaveil Tokenize (Local restore)",
+      "type": "n8n-nodes-synthaveil.taas",
+      "typeVersion": 1,
+      "position": [640, 340],
+      "notes": "Local restore seals a map on this n8n instance and emits `synthaveil_map_handle`. The API never sees the map — only the sealed bytes it stores until they are consumed once.",
+      "credentials": {
+        "taasApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Synthaveil API"
+        },
+        "synthaveilMapKey": {
+          "id": "REPLACE_WITH_YOUR_MAP_KEY_CREDENTIAL_ID",
+          "name": "Synthaveil Map Key (Local restore)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Stand-in for your AI step (OpenAI, Anthropic, a local model — whichever).\n// The model only ever sees the synthetic name/email/phone: it writes a note\n// referencing the synthetic name, exactly like it would with a real name.\nreturn items.map((item) => ({\n  json: {\n    ...item.json,\n    ai_output: `Follow-up note: spoke with ${item.json.name} about their account; nothing further needed.`,\n  },\n}));",
+        "notice": ""
+      },
+      "id": "d3c3c333-0000-4000-8000-000000000004",
+      "name": "Your AI step (placeholder)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 340]
+    },
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "restore",
+        "scopeId": "crm-local-restore-demo",
+        "mapHandle": "={{ $json.synthaveil_map_handle }}",
+        "textField": "ai_output"
+      },
+      "id": "d3c3c333-0000-4000-8000-000000000005",
+      "name": "Synthaveil Restore",
+      "type": "n8n-nodes-synthaveil.taas",
+      "typeVersion": 1,
+      "position": [1120, 340],
+      "notes": "Restores the real name inside `ai_output`. Turn OFF \"Retry On Fail\" on this node — the sealed map is destroyed the moment it is handed over, so a retry can never find a map to restore from. The node refuses to run at all if Retry On Fail is left on.",
+      "retryOnFail": false,
+      "credentials": {
+        "taasApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Synthaveil API"
+        },
+        "synthaveilMapKey": {
+          "id": "REPLACE_WITH_YOUR_MAP_KEY_CREDENTIAL_ID",
+          "name": "Synthaveil Map Key (Local restore)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "restore",
+        "scopeId": "crm-local-restore-demo",
+        "mapHandle": "={{ $('Synthaveil Tokenize (Local restore)').item.json.synthaveil_map_handle }}",
+        "textField": "ai_output"
+      },
+      "id": "d3c3c333-0000-4000-8000-000000000006",
+      "name": "Restore (wrong Map Key — fails)",
+      "type": "n8n-nodes-synthaveil.taas",
+      "typeVersion": 1,
+      "position": [1120, 560],
+      "disabled": true,
+      "notes": "AC14 wrong-credential failure journey. Disabled by default and mutually exclusive with \"Synthaveil Restore\" above — a sealed map is one-shot, so only one Restore node can consume it per run. To see the failure: disable \"Synthaveil Restore\", enable this node, and point `synthaveilMapKey` at a DIFFERENT Map Key credential (any key other than the one that sealed this map). The map's outer envelope will not open under the wrong key, so the node returns an AUTH_FAILED-style error rather than any restored — or plaintext — content. This is expected: it is the map key being wrong that fails safe, not a bug in the node.",
+      "credentials": {
+        "taasApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Synthaveil API"
+        },
+        "synthaveilMapKey": {
+          "id": "REPLACE_WITH_A_DIFFERENT_MAP_KEY_CREDENTIAL_ID",
+          "name": "Synthaveil Map Key (wrong key, for the failure demo)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When clicking Test": {
+      "main": [[{ "node": "Sample customer record", "type": "main", "index": 0 }]]
+    },
+    "Sample customer record": {
+      "main": [[{ "node": "Synthaveil Tokenize (Local restore)", "type": "main", "index": 0 }]]
+    },
+    "Synthaveil Tokenize (Local restore)": {
+      "main": [[{ "node": "Your AI step (placeholder)", "type": "main", "index": 0 }]]
+    },
+    "Your AI step (placeholder)": {
+      "main": [
+        [
+          { "node": "Synthaveil Restore", "type": "main", "index": 0 },
+          { "node": "Restore (wrong Map Key — fails)", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

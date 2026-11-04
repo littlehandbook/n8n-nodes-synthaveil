@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "schema": "TokenizeRequest",
+    "note": "Golden request body the node must build for the determinism (INV-001) test. Input: fields full_name->l2.synthesize-name, email->l2.synthesize-email; country GB; scope crm-sync; item also carries an unmapped internal_id and a nested note that must NOT appear."
+  },
+  "body": {
+    "record": {
+      "full_name": "Jane Smith",
+      "email": "jane@example.com"
+    },
+    "policy": {
+      "fields": {
+        "full_name": { "method": "l2.synthesize-name" },
+        "email": { "method": "l2.synthesize-email" }
+      }
+    },
+    "country": "GB",
+    "scope_id": "crm-sync"
+  }
+}

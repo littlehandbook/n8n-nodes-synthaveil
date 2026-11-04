@@ -1,0 +1,126 @@
+{
+  "name": "CRM → Synthaveil → LLM (anonymise before the model)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "b1a1a111-0000-4000-8000-000000000001",
+      "name": "When clicking Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0000000-0000-4000-8000-000000000001",
+              "name": "name",
+              "type": "string",
+              "value": "Jane Testerson"
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000002",
+              "name": "email",
+              "type": "string",
+              "value": "jane.testerson@example.com"
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000003",
+              "name": "phone",
+              "type": "string",
+              "value": "+44 7700 900123"
+            },
+            {
+              "id": "f0000000-0000-4000-8000-000000000004",
+              "name": "account_tier",
+              "type": "string",
+              "value": "gold"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1a1a111-0000-4000-8000-000000000002",
+      "name": "Sample customer record",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "tokenize",
+        "fieldsToTokenize": {
+          "field": [
+            { "fieldName": "name", "method": "l2.synthesize-name" },
+            { "fieldName": "email", "method": "l2.synthesize-email" },
+            { "fieldName": "phone", "method": "l2.synthesize-phone" }
+          ]
+        },
+        "scopeId": "crm-demo",
+        "country": "GB",
+        "outputMode": "replaceInPlace",
+        "retryOnRateLimit": true
+      },
+      "id": "b1a1a111-0000-4000-8000-000000000003",
+      "name": "Synthaveil Tokenize",
+      "type": "n8n-nodes-synthaveil.taas",
+      "typeVersion": 1,
+      "position": [680, 300],
+      "credentials": {
+        "taasApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Synthaveil API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "b1a1a111-0000-4000-8000-000000000004",
+      "name": "Your LLM node (placeholder)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [920, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0000000-0000-4000-8000-000000000005",
+              "name": "note",
+              "type": "string",
+              "value": "The record above is anonymised: name/email/phone are consistent synthetic values, account_tier is untouched."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b1a1a111-0000-4000-8000-000000000005",
+      "name": "Annotate result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1160, 300]
+    }
+  ],
+  "connections": {
+    "When clicking Test": {
+      "main": [[{ "node": "Sample customer record", "type": "main", "index": 0 }]]
+    },
+    "Sample customer record": {
+      "main": [[{ "node": "Synthaveil Tokenize", "type": "main", "index": 0 }]]
+    },
+    "Synthaveil Tokenize": {
+      "main": [[{ "node": "Your LLM node (placeholder)", "type": "main", "index": 0 }]]
+    },
+    "Your LLM node (placeholder)": {
+      "main": [[{ "node": "Annotate result", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

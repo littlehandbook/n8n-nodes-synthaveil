@@ -1,0 +1,30 @@
+{
+  "_meta": {
+    "schema": "thrown-transport-error",
+    "endpoint": "/api/v1/tokenize",
+    "method": "POST",
+    "status": 401,
+    "source": "hand-authored A1/I5 credential-exposure fixture: a hostile/echoing transport error that carries the bearer key in request options, request headers, and an echoed response body. Nothing built from this error may surface the key.",
+    "secret": "Bearer sk-taas-FAKE-a1-credential-000"
+  },
+  "error": {
+    "statusCode": 401,
+    "message": "401 - Unauthorized (Authorization: Bearer sk-taas-FAKE-a1-credential-000)",
+    "options": {
+      "headers": { "Authorization": "Bearer sk-taas-FAKE-a1-credential-000" }
+    },
+    "request": {
+      "headers": { "authorization": "Bearer sk-taas-FAKE-a1-credential-000" }
+    },
+    "response": {
+      "headers": { "www-authenticate": "Bearer realm=\"taas\"" },
+      "body": {
+        "type": "https://taas.dev/problems/unauthorized",
+        "title": "Unauthorized",
+        "status": 401,
+        "code": "unauthorized",
+        "echo": { "authorization": "Bearer sk-taas-FAKE-a1-credential-000" }
+      }
+    }
+  }
+}

@@ -1,0 +1,7 @@
+dist
+node_modules
+coverage
+*.tsbuildinfo
+# npm pack output — a build artifact, never committed. One slipped into 49799e0
+# when a `git add -A` swept up a tarball left behind by a manual `npm pack`.
+*.tgz

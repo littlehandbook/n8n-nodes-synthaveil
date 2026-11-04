@@ -1,0 +1,77 @@
+{
+  "name": "n8n-nodes-synthaveil",
+  "version": "0.4.0",
+  "description": "n8n community node for Synthaveil (TAAS) \u2014 deterministic structured-data tokenisation (L1/L2/L3) over the hosted /api/v1 surface.",
+  "license": "MIT",
+  "homepage": "https://synthaveil.com",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "tokenization",
+    "anonymization",
+    "pii",
+    "synthaveil",
+    "taas"
+  ],
+  "author": {
+    "name": "The Little Handbook",
+    "email": "support@synthaveil.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/littlehandbook/n8n-nodes-synthaveil.git"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "build": "tsc && node scripts/copy-assets.mjs",
+    "dev": "n8n-node dev",
+    "lint": "eslint nodes credentials src",
+    "lint:fix": "eslint nodes credentials src --fix",
+    "test": "jest",
+    "format": "prettier --write \"{nodes,credentials,src}/**/*.ts\"",
+    "format:check": "prettier --check \"{nodes,credentials,src}/**/*.ts\"",
+    "scan:local": "node scripts/scan-local.mjs",
+    "sync:mirror": "node scripts/sync-n8n-mirror.mjs"
+  },
+  "files": [
+    "dist",
+    "vendor/restore-protocol.js",
+    "vendor/HASH"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "strict": true,
+    "credentials": [
+      "dist/credentials/TaasApi.credentials.js",
+      "dist/credentials/SynthaveilMapKey.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Taas/Taas.node.js"
+    ]
+  },
+  "overrides": {
+    "@langchain/community": {
+      "ignore": "7.0.6"
+    },
+    "@typescript-eslint/eslint-plugin": {
+      "ignore": "7.0.6"
+    }
+  },
+  "devDependencies": {
+    "@n8n/node-cli": "^0.38.8",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.10.0",
+    "esbuild": "0.27.3",
+    "eslint": "9.32.0",
+    "jest": "^30.0.0",
+    "n8n-workflow": "2.16.0",
+    "prettier": "3.6.2",
+    "ts-jest": "^29.4.0",
+    "typescript": "5.9.2"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

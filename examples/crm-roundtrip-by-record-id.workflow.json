@@ -1,0 +1,206 @@
+{
+  "name": "CRM round trip by record ID (Synthaveil → AI → write-back)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "c2b2b222-0000-4000-8000-000000000001",
+      "name": "When clicking Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Three support tickets straight out of a CRM. `id` is YOUR record id:\n// it is not personal data, it is never sent to Synthaveil, and it is the only\n// thing you need to put the model's answer back on the right row.\n//\n// Note what `body` does NOT contain: a name. Free text is where personal data\n// hides, and tokenising the `name` and `email` columns does nothing for it —\n// an earlier version of this example named the customer in `body` while\n// claiming the model never saw them, which was simply untrue.\n// If YOUR free text mentions people, protect it too: run it through the Scan\n// operation, or map it to an L3 free-text method, before it reaches a model.\nreturn [\n  { json: { id: 'T-4821', name: 'Jane Testerson', email: 'jane.testerson@example.com', body: 'Customer called about their invoice being wrong again.' } },\n  { json: { id: 'T-4822', name: 'Ahmed Farouk',   email: 'ahmed.farouk@example.com',   body: 'Customer asked to move their renewal date.' } },\n  { json: { id: 'T-4823', name: 'Priya Nair',     email: 'priya.nair@example.com',     body: 'Customer reported the export button doing nothing.' } },\n];",
+        "notice": ""
+      },
+      "id": "c2b2b222-0000-4000-8000-000000000002",
+      "name": "Three sample tickets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "token",
+        "operation": "tokenize",
+        "fieldsToTokenize": {
+          "field": [
+            {
+              "fieldName": "name",
+              "method": "l2.synthesize-name"
+            },
+            {
+              "fieldName": "email",
+              "method": "l2.synthesize-email"
+            }
+          ]
+        },
+        "scopeId": "crm-roundtrip-demo",
+        "returnMode": "recordId",
+        "country": "GB",
+        "outputMode": "replaceInPlace",
+        "retryOnRateLimit": true
+      },
+      "id": "c2b2b222-0000-4000-8000-000000000003",
+      "name": "Synthaveil Tokenize",
+      "type": "n8n-nodes-synthaveil.taas",
+      "typeVersion": 1,
+      "position": [
+        660,
+        320
+      ],
+      "notes": "Only name and email are listed. `id` and `body` are untouched — `id` because it is your own reference, `body` because free text needs Local restore (v1.1).",
+      "credentials": {
+        "taasApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Synthaveil API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Stand-in for your AI step (OpenAI, Anthropic, a local model — whichever).\n// Swap this node for the real one; the only thing that matters downstream is\n// that the model's output still carries `id`.\n//\n// Note what the model receives: a synthetic name and email, the ticket id, and\n// a `body` that names nobody. It never sees the real customers. That last part\n// is only true because `body` was written without names in it — protecting the\n// name/email columns alone would not have made it true.\nreturn items.map((item) => ({\n  json: {\n    id: item.json.id,\n    summary: `Summary for ${item.json.name}: ${String(item.json.body).slice(0, 40)}…`,\n  },\n}));",
+        "notice": ""
+      },
+      "id": "c2b2b222-0000-4000-8000-000000000004",
+      "name": "Your AI step (placeholder)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "id",
+              "field2": "id"
+            }
+          ]
+        },
+        "joinMode": "keepEverything",
+        "options": {}
+      },
+      "id": "c2b2b222-0000-4000-8000-000000000005",
+      "name": "Merge on record ID",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1140,
+        320
+      ],
+      "notes": "Input 1 = the original CRM rows (real names, never left n8n). Input 2 = the model's answers. They join on `id` — the join Synthaveil never needed to know about."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e0000000-0000-4000-8000-000000000001",
+              "name": "write_back_to",
+              "type": "string",
+              "value": "={{ 'ticket ' + $json.id + ' — ' + $json.name }}"
+            },
+            {
+              "id": "e0000000-0000-4000-8000-000000000002",
+              "name": "write_back_value",
+              "type": "string",
+              "value": "={{ $json.summary }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c2b2b222-0000-4000-8000-000000000006",
+      "name": "Write back to CRM",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1380,
+        320
+      ],
+      "notes": "Replace with your real CRM node. The point of the example: the summary lands on the right ticket, under the real customer name, and no mapping was stored anywhere to make that happen."
+    }
+  ],
+  "connections": {
+    "When clicking Test": {
+      "main": [
+        [
+          {
+            "node": "Three sample tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Three sample tickets": {
+      "main": [
+        [
+          {
+            "node": "Synthaveil Tokenize",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge on record ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Synthaveil Tokenize": {
+      "main": [
+        [
+          {
+            "node": "Your AI step (placeholder)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Your AI step (placeholder)": {
+      "main": [
+        [
+          {
+            "node": "Merge on record ID",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge on record ID": {
+      "main": [
+        [
+          {
+            "node": "Write back to CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

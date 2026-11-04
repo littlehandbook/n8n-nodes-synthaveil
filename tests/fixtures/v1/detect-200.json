@@ -1,0 +1,16 @@
+{
+  "_meta": {
+    "schema": "DetectResponse",
+    "endpoint": "/api/v1/detect",
+    "method": "POST",
+    "status": 200,
+    "source": "shape verified against staging /api/v1/detect 2026-07-11 (entityType/layer/confidence, not type); body.rulesetVersion hand-edited 2026-10-18 to the public label r1 that 17n serves for the ruleset of that capture (PR #1222), not re-captured; replace via capture-fixtures when staging serves 17n"
+  },
+  "body": {
+    "spans": [
+      { "start": 0, "end": 15, "text": "Call Jane Smith", "entityType": "PERSON", "layer": "ner", "confidence": 0.7 }
+    ],
+    "countsByType": { "PERSON": 1 },
+    "rulesetVersion": "r1"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "_meta": {
+    "schema": "Problem",
+    "endpoint": "/api/v1/tokenize",
+    "method": "POST",
+    "status": 401,
+    "source": "hand-authored from route code, replace via capture-fixtures when staging reachable"
+  },
+  "body": {
+    "type": "https://taas.dev/problems/unauthorized",
+    "title": "Unauthorized",
+    "status": 401,
+    "code": "unauthorized",
+    "error": "unauthorized"
+  }
+}

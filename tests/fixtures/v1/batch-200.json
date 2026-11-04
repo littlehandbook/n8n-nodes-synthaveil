@@ -1,0 +1,20 @@
+{
+  "_meta": {
+    "schema": "BatchResponse",
+    "endpoint": "/api/v1/tokenize/batch",
+    "method": "POST",
+    "status": 200,
+    "source": "hand-authored from route code, replace via capture-fixtures when staging reachable"
+  },
+  "body": {
+    "results": [
+      {
+        "tokenized": { "first_name": "Michael" },
+        "job_id": "api-v1:org_demo:2026-07-10",
+        "processed_at": "2026-07-10T12:00:00.000Z"
+      },
+      { "error": "tokenize_failed" }
+    ],
+    "batch_size": 2
+  }
+}

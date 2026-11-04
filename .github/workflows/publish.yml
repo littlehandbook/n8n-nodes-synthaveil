@@ -1,0 +1,130 @@
+# ============================================================================
+# PARKED -- this file does NOT run from the monorepo.
+#
+# It lives under `.github-publish/`, which is not a workflow path, so GitHub
+# Actions cannot trigger it from here. Do NOT move it to `.github/workflows/`
+# inside the monorepo.
+#
+# Council condition PC-3 (SPEC->PLAN gate 2026-08-30): the monorepo copy of the
+# package is CANONICAL and the public repo `littlehandbook/n8n-nodes-synthaveil`
+# is a one-way publish MIRROR, filled only by `scripts/sync-n8n-mirror.mjs` from
+# a monorepo tag. This workflow is carried across by that sync and exists only in
+# the mirror, at `.github/workflows/publish.yml`. Nothing is ever hand-edited in
+# the mirror; the fix for a diverged mirror is to re-run the sync.
+#
+# Before the first real release, the founder must (Task 0.8):
+#   1. Bootstrap-publish a `0.0.0` placeholder by hand with 2FA (npm cannot
+#      register a trusted publisher for a package that does not exist yet --
+#      npm/cli#8544), then deprecate it immediately.
+#   2. Register the npm Trusted Publisher: GitHub Actions, org `littlehandbook`,
+#      repo `n8n-nodes-synthaveil`, workflow filename `publish.yml` (exact case),
+#      environment blank. Allowed action: `npm stage publish` ONLY -- stage-only is
+#      the strongest posture npm documents, and it is the gap that OIDC alone left
+#      open in the June 2026 TanStack / Red Hat incidents. Then turn on
+#      "Require 2FA and disallow tokens".
+#   3. PC-4b: prove a STAGED publish actually carries provenance, on throwaway
+#      `0.0.1`, before tagging `v0.2.0`. n8n's scanner hard-fails a version with
+#      no provenance, and nothing has yet demonstrated that `npm stage publish
+#      --provenance` produces the same attestation as `npm publish --provenance`.
+#
+# See docs/plans/2026-08-29-n8n-return-mode.md Task 0.8 and
+# docs/adr/0051-mode-d-customer-sealed-blob.md section 4.
+# ============================================================================
+name: publish
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for npm provenance via the OIDC trusted publisher
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      # Node 24.0-24.13 ship npm 11.3-11.6.2; staged publishing needs npm
+      # >= 11.15.0 (24.18 ships 11.16.0, 24.19 ships 11.17.0). No cache on a
+      # release build: a stale cache is how a pinned toolchain quietly regresses.
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '>=24.19'
+          registry-url: https://registry.npmjs.org
+
+      # PC-4c. Belt and braces over the version range above: if the resolved npm
+      # is older than 11.15.0, `npm stage publish` does not exist and the job must
+      # fail loudly here rather than fall back to something weaker.
+      - name: Assert npm >= 11.15.0 (staged publishing)
+        run: |
+          node -e "
+            const v = process.versions.npm;
+            const [maj, min] = v.split('.').map(Number);
+            if (maj < 11 || (maj === 11 && min < 15)) {
+              throw new Error('npm ' + v + ' < 11.15.0 -- staged publishing unavailable');
+            }
+            console.log('npm ' + v + ' OK for staged publishing');
+          "
+
+      # rm-32 / provenance guard. npm verifies the attestation against the
+      # repository URL and rejects a mismatch with
+      # `422 Failed to validate repository information`. GitHub's casing is
+      # significant, so this is an exact string comparison, not a lowercase one.
+      - name: Assert repository.url matches this repo exactly
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            const expected = 'https://github.com/littlehandbook/n8n-nodes-synthaveil.git';
+            if (pkg.repository?.url !== expected) {
+              throw new Error('repository.url is ' + pkg.repository?.url + ', expected ' + expected);
+            }
+            console.log('repository.url OK');
+          "
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Build BEFORE the tests, same order as the monorepo's `n8n-package.yml`:
+      # tests/packaging/loadable.test.ts exercises the build OUTPUT -- it packs
+      # the tarball, extracts it and requires the compiled node, because the bug
+      # it guards against (a vendored runtime file that never reached dist/, so
+      # the published node threw MODULE_NOT_FOUND on load) is invisible to every
+      # suite that runs against the TypeScript sources. With Test first it threw
+      # on a missing dist/ and failed the release for no real reason.
+      - name: Build
+        run: npm run build
+
+      # Must ignore the same paths as the monorepo's `n8n-package.yml` test
+      # step. tests/spikes/ probes a manually symlinked package that is
+      # deliberately NOT a dependency (see the spike header), so ts-jest cannot
+      # compile it here either -- and this repo has no symlink to give it. A
+      # bare `npm test` meant the release gate failed on a suite the monorepo
+      # had already decided to skip. Both the ignore pattern and this step order
+      # are held equal to n8n-package.yml by
+      # tests/ci/n8nPackageDriftTrigger.test.ts in the monorepo, which is the
+      # only place both workflow files exist.
+      - name: Test
+        run: npm test -- --testPathIgnorePatterns "tests/spikes/"
+
+      # Reproduces both legs of @n8n/scan-community-package locally, so a version
+      # that the scanner would reject never reaches the registry.
+      - name: Scan (local reproduction of the n8n community scanner)
+        run: npm run scan:local
+
+      # Stage, do not publish. The version sits in npm's staging area until the
+      # founder approves it with a 2FA code (`npm stage approve`, or the Staged
+      # Packages tab). `--provenance` is passed explicitly: several 2026 reports
+      # show the "automatic" provenance path silently not engaging.
+      #
+      # There is deliberately no npm auth secret anywhere in this workflow --
+      # publishing is tokenless via OIDC, and even an EMPTY auth env var breaks it.
+      - name: Stage publish with provenance
+        run: npm stage publish --provenance --access public
