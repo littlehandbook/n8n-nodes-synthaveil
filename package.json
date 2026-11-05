@@ -1,7 +1,7 @@
 {
   "name": "n8n-nodes-synthaveil",
-  "version": "0.4.0",
-  "description": "n8n community node for Synthaveil (TAAS) \u2014 deterministic structured-data tokenisation (L1/L2/L3) over the hosted /api/v1 surface.",
+  "version": "0.0.1",
+  "description": "n8n community node for Synthaveil (TAAS) — deterministic structured-data tokenisation (L1/L2/L3) over the hosted /api/v1 surface.",
   "license": "MIT",
   "homepage": "https://synthaveil.com",
   "keywords": [

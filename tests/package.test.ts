@@ -15,9 +15,9 @@ describe('package manifest', () => {
   // 0.3.0 -> 0.3.1 (EU10): the vendored restore-protocol 0.2.0 refuses INVALID_ENTRY on text it
   // cannot map back (a combining mark after a stand-in, conjoining-jamo Hangul).
   // 0.3.1 -> 0.4.0 on 2026-10-18 (#902): new method `l2.synthesize-locality`.
-  it('is named n8n-nodes-synthaveil at 0.4.0 under MIT', () => {
+  it('is named n8n-nodes-synthaveil at 0.0.1 under MIT', () => {
     expect(pkg.name).toBe('n8n-nodes-synthaveil');
-    expect(pkg.version).toBe('0.4.0');
+    expect(pkg.version).toBe('0.0.1');
     expect(pkg.license).toBe('MIT');
   });
 
