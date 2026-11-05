@@ -55,7 +55,6 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '>=24.19'
-          registry-url: https://registry.npmjs.org
 
       # PC-4c. Belt and braces over the version range above: if the resolved npm
       # is older than 11.15.0, `npm stage publish` does not exist and the job must
