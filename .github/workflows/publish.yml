@@ -63,7 +63,7 @@ jobs:
       - name: Assert npm >= 11.15.0 (staged publishing)
         run: |
           node -e "
-            const v = process.versions.npm;
+            const v = require('child_process').execSync('npm --version', { encoding: 'utf8' }).trim();
             const [maj, min] = v.split('.').map(Number);
             if (maj < 11 || (maj === 11 && min < 15)) {
               throw new Error('npm ' + v + ' < 11.15.0 -- staged publishing unavailable');
