@@ -126,4 +126,4 @@ jobs:
       # There is deliberately no npm auth secret anywhere in this workflow --
       # publishing is tokenless via OIDC, and even an EMPTY auth env var breaks it.
       - name: Stage publish with provenance
-        run: npm stage publish --provenance --access public
+        run: npm stage publish --provenance --access public --loglevel verbose
