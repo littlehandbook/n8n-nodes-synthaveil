@@ -1,3 +1,5 @@
+import type { IAuthenticateRuleResponseCode } from 'n8n-workflow';
+
 /**
  * Package-wide constants for the Synthaveil (TAAS) n8n node.
  *
@@ -11,6 +13,12 @@ export const API_V1 = '/api/v1';
 
 /** GET usage/quota snapshot — the credential-test target and Get Usage op. */
 export const USAGE_PATH = `${API_V1}/usage`;
+
+/**
+ * GET public health probe — the Map Key credential's Test target. Called with
+ * NO Authorization header, so nothing from that credential is ever sent.
+ */
+export const HEALTH_PATH = `${API_V1}/health`;
 
 /** POST single-record tokenise. */
 export const TOKENIZE_PATH = `${API_V1}/tokenize`;
@@ -68,6 +76,14 @@ export const COMMERCIAL_DPA_PATH = '/commercial/dpa';
 export const DEFAULT_BASE_URL = 'https://api.synthaveil.com';
 
 /**
+ * Where the API key credential's Test button goes when the operator turned the
+ * override on but its value fails the base-URL policy. `.invalid` is reserved by
+ * RFC 6761 and never resolves, so the Test fails locally and the key reaches
+ * neither the refused override nor production.
+ */
+export const REFUSED_OVERRIDE_BASE_URL = 'https://override-refused.invalid';
+
+/**
  * Host allow-list roots for the credential base URL (A1/I5). For each entry the
  * exact host or any true subdomain is accepted; anything else needs the explicit
  * "Allow non-production URL (local development)" credential toggle — which
@@ -83,7 +99,32 @@ export const CREDENTIAL_NAME = 'taasApi';
  * n8n credential type name for the Local-restore Map Key (P3). Never sent to
  * the hosted API — used only to seal/open maps client-side (`sealedMap.ts`).
  */
-export const MAP_KEY_CREDENTIAL_NAME = 'synthaveilMapKey';
+export const MAP_KEY_CREDENTIAL_NAME = 'synthaveilMapKeyApi';
+
+/** HTTP 401 — the credential Test rule for a key the API does not accept. */
+export const HTTP_UNAUTHORIZED = 401;
+
+/** HTTP 403 — the credential Test rule for a key without `tokenize:read`. */
+export const HTTP_FORBIDDEN = 403;
+
+/**
+ * Every redirect status a credential Test request can meet. Both credential
+ * tests set `disableFollowRedirect`, so each of these ends the Test with
+ * {@link REDIRECT_REFUSED_MESSAGE} instead of following the redirect.
+ */
+export const HTTP_REDIRECT_STATUSES = Object.freeze([301, 302, 303, 307, 308] as const);
+
+/** Shown when the API answers a credential Test with a redirect. */
+export const REDIRECT_REFUSED_MESSAGE =
+  'The API answered with a redirect; nothing was sent onward. Check that this n8n can reach api.synthaveil.com directly.';
+
+/** One `responseCode` Test rule per redirect status, shared by both credentials. */
+export const REDIRECT_REFUSED_RULES: IAuthenticateRuleResponseCode[] = HTTP_REDIRECT_STATUSES.map(
+  (value) => ({
+    type: 'responseCode',
+    properties: { value, message: REDIRECT_REFUSED_MESSAGE },
+  }),
+);
 
 /** PUT the sealed map / POST consume it (Local restore, P3). */
 export const MAPS_PATH = `${API_V1}/maps`;

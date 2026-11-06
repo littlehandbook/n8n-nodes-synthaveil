@@ -1,27 +1,26 @@
-import type { INodePropertyOptions } from 'n8n-workflow';
+import type { ICredentialDataDecryptedObject, INodePropertyOptions } from 'n8n-workflow';
 
 import { TaasApi } from '../../credentials/TaasApi.credentials';
 import { resolveBaseUrl } from '../../nodes/Taas/transport';
-import { DEFAULT_BASE_URL } from '../../src/constants';
+import { DEFAULT_BASE_URL, REFUSED_OVERRIDE_BASE_URL } from '../../src/constants';
+import { renderTestRequest } from './testTargetKit';
 
 /**
  * L14-1 / L08-1 (Medium/Low) — SHIPPED (header corrected 2026-09-14; it used to
  * credit option (b) alone for what is really both halves).
  *
- * HEAD ships BOTH halves the register names: **option (a)**, the programmatic
- * credential test plus the shared policy module, and **option (b)**, the
- * options-bound `baseUrl` with the `baseUrlOverride` escape hatch. Both
- * resolve their target through the one `selectBaseUrl` in
- * `src/baseUrlPolicy.ts`.
+ * HEAD ships BOTH halves the register names: **option (a)**, the shared
+ * policy module (`selectBaseUrl` in `src/baseUrlPolicy.ts`), and **option
+ * (b)**, the options-bound `baseUrl` with the `baseUrlOverride` escape hatch.
+ * (Option (a) once also had a programmatic credential test; a static-host
+ * declarative test that never reads the base URL fields replaced it.)
  *
  * `baseUrl` is `type: 'options'` with exactly one entry, the production host
  * (`DEFAULT_BASE_URL`) — there is no staging host in this product, so no free
  * text is possible in the UI and a stored value has nowhere to drift to except
  * that one option. A `baseUrlOverride` free-text property exists for a
  * self-hosted or test endpoint, shown ONLY when the `allowNonProductionUrl`
- * toggle is on. `selectBaseUrl` — called by `resolveBaseUrl` at execution time
- * and by `taasApiTest` behind the credential Test button, so the two can never
- * disagree about a credential:
+ * toggle is on. `selectBaseUrl` — called by `resolveBaseUrl` at execution time:
  *   - uses `baseUrlOverride` (still run through `checkBaseUrlPolicy`) when the
  *     toggle is on and the override is non-empty;
  *   - otherwise refuses a stored `baseUrl` value that is not the option value
@@ -38,19 +37,38 @@ function byName(properties: { name: string }[]) {
   return Object.fromEntries(properties.map((p) => [p.name, p])) as Record<string, any>;
 }
 
+function execCtx(credentials: Record<string, unknown>) {
+  return {
+    getCredentials: jest.fn().mockResolvedValue(credentials),
+    getNode: jest.fn().mockReturnValue({ name: 'Synthaveil (TAAS)', type: 'taas' }),
+    helpers: { httpRequestWithAuthentication: jest.fn() },
+  } as any;
+}
+
 /**
- * IT Council SA-C1 (QA review of PR #633) superseded the declarative
- * expression this suite used to evaluate: a static `={{ ... }}` expression
- * cannot refuse an unsafe `baseUrlOverride` before n8n builds the request, so
- * an override of `http://169.254.169.254` would still get the Bearer key. The
- * connection check is now the programmatic `taasApiTest`
- * (`nodes/Taas/credentialTest.ts`, registered via `testedBy` in
- * `nodeCredentials.ts`) — see `tests/nodes/credentialTest.test.ts` for its
- * target-selection, zero-request-on-refusal, and status-message coverage.
+ * IT Council SA-C1 (QA review of PR #633) rejected a `={{ ... }}` Test
+ * `baseURL` reading `baseUrlOverride`, because the expression cannot refuse an
+ * unsafe override before n8n builds the request, and the 24 Sep 2026 delta
+ * review locked the Test to `DEFAULT_BASE_URL`. On 6 Nov 2026 the owner chose
+ * "send the key only to the server they chose", refining SA-C1: the expression
+ * is back, and it checks the override against a strict subset of execution's
+ * policy (`src/credentialTestTarget.ts`, `TaasApi.testTargetPolicy.test.ts`).
+ * This pins that SA-C1's own example no longer gets the key.
  */
-describe('TaasApi.test — superseded by the programmatic taasApiTest (SA-C1)', () => {
-  it('has no declarative test block', () => {
-    expect('test' in new TaasApi()).toBe(false);
+describe('TaasApi.test — SA-C1 closed under the owner decision of 6 Nov 2026', () => {
+  const unsafe = {
+    baseUrl: DEFAULT_BASE_URL,
+    apiKey: 'sk-taas-FAKE-sac1-000',
+    [ALLOW_FIELD]: true,
+    baseUrlOverride: 'http://169.254.169.254',
+  };
+
+  it('execution refuses a plain-http non-loopback override', async () => {
+    await expect(resolveBaseUrl(execCtx(unsafe))).rejects.toThrow(/https/i);
+  });
+
+  it('the Test button refuses it too: the key goes to the reserved .invalid host, not the override or production', () => {
+    expect(renderTestRequest(unsafe as ICredentialDataDecryptedObject).baseURL).toBe(REFUSED_OVERRIDE_BASE_URL);
   });
 });
 
@@ -190,5 +208,47 @@ describe('resolveBaseUrl — SSRF targets already refused with the toggle off (r
   it('rejects http://10.0.0.5 with the toggle off', async () => {
     const ctx = ctxWith({ baseUrl: 'http://10.0.0.5', apiKey: 'k' });
     await expect(resolveBaseUrl(ctx)).rejects.toThrow(/https/i);
+  });
+});
+
+/**
+ * Carried over from the deleted `credentialTest.test.ts`, which pinned these on
+ * the programmatic `taasApiTest`. The Test button no longer reads the override
+ * at all, so the guarantee lives only at execution — the same cases against
+ * `resolveBaseUrl`, via the OVERRIDE field.
+ */
+describe('resolveBaseUrl — override refusals carried over from the deleted credential test', () => {
+  const FAKE_KEY = 'sk-taas-FAKE-fsdc5-000';
+
+  function ctxWith(credentials: Record<string, unknown>) {
+    return {
+      getCredentials: jest.fn().mockResolvedValue(credentials),
+      getNode: jest.fn().mockReturnValue({ name: 'Synthaveil (TAAS)', type: 'taas' }),
+      helpers: { httpRequestWithAuthentication: jest.fn() },
+    } as any;
+  }
+
+  const withOverride = (baseUrlOverride: string) =>
+    ctxWith({ baseUrl: DEFAULT_BASE_URL, apiKey: FAKE_KEY, [ALLOW_FIELD]: true, baseUrlOverride });
+
+  it('rejects a plain-http remote override (http://evil.example) with the toggle on', async () => {
+    await expect(resolveBaseUrl(withOverride('http://evil.example'))).rejects.toThrow(/https/i);
+  });
+
+  it('refuses the toggle on with an empty override, never falling back to production', async () => {
+    await expect(resolveBaseUrl(withOverride(''))).rejects.toThrow(/override/i);
+  });
+
+  it('never includes the API key in the error when refusing an unsafe override', async () => {
+    let thrown: unknown;
+    try {
+      await resolveBaseUrl(withOverride('http://169.254.169.254'));
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeDefined();
+    const serialized =
+      String((thrown as Error).message) + JSON.stringify(thrown, Object.getOwnPropertyNames(thrown as object));
+    expect(serialized).not.toContain(FAKE_KEY);
   });
 });

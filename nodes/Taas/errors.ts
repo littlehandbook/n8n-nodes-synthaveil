@@ -6,7 +6,7 @@ import {
   type JsonObject,
 } from 'n8n-workflow';
 
-import { COMMERCIAL_DPA_PATH } from '../../src/constants';
+import { COMMERCIAL_DPA_PATH, HTTP_FORBIDDEN, HTTP_UNAUTHORIZED } from '../../src/constants';
 import {
   extractResponseBody,
   extractRetryAfterSeconds,
@@ -33,8 +33,6 @@ import { mapLegacyErrorCodeToMessage } from './legacyMessages';
  * the original error text.
  */
 
-const HTTP_UNAUTHORIZED = 401;
-const HTTP_FORBIDDEN = 403;
 const HTTP_NOT_FOUND = 404;
 
 /** HTTP status → operator-facing message (C5 credential-adjacent fallback). */

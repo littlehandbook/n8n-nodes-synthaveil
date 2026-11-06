@@ -5,11 +5,14 @@ import { ALLOWED_BASE_URL_HOSTS, DEFAULT_BASE_URL } from './constants';
  * (the options-bound `baseUrl` value and the `baseUrlOverride` escape hatch).
  *
  * The URL *check* was extracted here first (finding D / L14-1 follow-up) so
- * there was one implementation to enforce. Target *selection* was still
- * written twice -- `nodes/Taas/credentialTest.ts` and `nodes/Taas/transport.ts`
- * -- and the two copies disagreed, so the credential Test button and execution
- * could target different hosts for the same credential. {@link selectBaseUrl}
- * is now the single selection implementation both call.
+ * there was one implementation to enforce. Target *selection* was once
+ * written twice -- a programmatic credential test and `nodes/Taas/transport.ts`
+ * -- and the two copies disagreed. {@link selectBaseUrl} became the single
+ * selection implementation; execution is its only caller. The credential Test
+ * button is a declarative n8n expression that cannot call this module, so it
+ * restates the override check as a strict subset of {@link checkBaseUrlPolicy}
+ * (`src/credentialTestTarget.ts`). Change one, change the other: the subset is
+ * held by `tests/credentials/TaasApi.testTargetPolicy.test.ts`.
  */
 
 /**
@@ -151,9 +154,10 @@ function selectStoredOption(baseUrl: unknown, allowNonProduction: boolean): Base
 
 /**
  * The ONE target-selection implementation: the host this credential may talk
- * to, or why it may not talk to any. Both the credential Test button
- * (`credentialTest.ts`) and execution (`transport.ts`) call this, so the two
- * can no longer disagree about a given credential.
+ * to, or why it may not talk to any. Called by execution (`transport.ts`
+ * `resolveBaseUrl`); the credential Test button selects with an n8n expression
+ * that never targets a host this refuses, and checks production when the
+ * toggle is on but the override is empty.
  */
 export function selectBaseUrl(credential: BaseUrlCredentialData): BaseUrlSelection {
   const allowNonProduction = credential.allowNonProductionUrl === true;

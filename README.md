@@ -54,14 +54,14 @@ by anybody. Your CRM already knows who `T-4821` is; that is the only join you ne
 
 The one thing this mode cannot do is un-swap **free text**. If you need the
 model's prose to come back with the real names in it, that is `Return mode =
-Local restore`: **the map is sealed on your n8n with a key that never leaves it;
+Local Restore`: **the map is sealed on your n8n with a key that never leaves it;
 Synthaveil stores bytes it cannot open and destroys them the moment it hands the
 map back (one-shot).** It is a `Return mode` setting on the node, and it is the
 only mode that involves a map at all.
 
 ## What Synthaveil can and cannot see
 
-|                                                        | **Record ID mode**                           | **Local restore mode**                                                                                                        |
+|                                                        | **Record ID mode**                           | **Local Restore mode**                                                                                                        |
 | ------------------------------------------------------ | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | Your real values, while the request is being processed | Yes — that is what tokenisation is           | Yes — that is what tokenisation is                                                                                            |
 | Your real values, stored afterwards                    | **No**                                       | **No**                                                                                                                        |
@@ -109,11 +109,11 @@ Everything below happens once. It takes a few minutes.
 4. In n8n, add a **Synthaveil API** credential: pick **Base URL** from the
    dropdown (Production is the only option unless you need a self-hosted or
    test endpoint — see below) and paste your **API Key**. The credential test
-   calls `GET /api/v1/usage`; a passing test confirms the key and read scope,
-   but not write scope or the DPA.
+   calls `GET /api/v1/usage` on `api.synthaveil.com`; a passing test confirms the
+   key and read scope, but not write scope or the DPA.
 5. Import and run the example workflow at
    [`examples/crm-anonymise-llm.workflow.json`](./examples/crm-anonymise-llm.workflow.json).
-6. For the Local restore mode, see
+6. For the Local Restore mode, see
    [`examples/crm-local-restore.workflow.json`](./examples/crm-local-restore.workflow.json)
    — a Tokenize → AI step → Restore round trip, plus a disabled branch showing
    what the wrong-credential failure looks like. This example has **not yet
@@ -128,19 +128,22 @@ this change:
 
 - A credential already pointing at the production host needs no action.
 - A credential pointing anywhere else (a hand-typed staging/self-hosted URL, or
-  one loaded from an old workflow export) now fails, at **both** Test time and
-  execution time, asking you to re-select the API host. Open the credential,
+  one loaded from an old workflow export) now fails at execution time, asking
+  you to re-select the API host. Open the credential,
   re-pick **Base URL** from the list, and — if you genuinely need a
   non-production endpoint — tick **Allow non-production URL (local
   development)** and put that host in the new **Base URL Override** field
   instead.
-- The credential **Test** button and node execution resolve the target through
-  one shared selector, so they always give the same verdict and run the same
-  SSRF checks. Test never reports success for a credential execution would
-  refuse, and it never sends your API key to a host you didn't configure.
+- The credential **Test** button sends your key only to the server you chose:
+  your **Base URL Override** when **Allow non-production URL** is on and the
+  override is filled in, and `api.synthaveil.com` otherwise. It does not follow
+  redirects. An override that breaks the https rule below fails the Test
+  without your key being sent anywhere, and the workflow refuses to run with
+  it. A few unusual but valid https forms (an address with a user name in it,
+  a bare IP address) also fail the Test; the workflow still accepts them.
 - Ticking **Allow non-production URL** on its own is no longer enough: with the
-  toggle on and **Base URL Override** left empty, both Test and execution
-  refuse until you fill the override in. The toggle relaxes the host rules for
+  toggle on and **Base URL Override** left empty, execution refuses until you
+  fill the override in. The toggle relaxes the host rules for
   the override value only, never for the **Base URL** you picked from the list.
   https is still required everywhere except a localhost override.
 
@@ -150,7 +153,7 @@ this change:
 | -------- | -------------------- | --------------------------------------------------------------------------------------------------------------- |
 | Token    | **Tokenize**         | Protect the mapped fields of a single record.                                                                   |
 | Token    | **Tokenize (Batch)** | Protect the mapped fields across many records in one request (up to 100; 50 when any field uses an L3 method).  |
-| Text     | **Scan Text**        | Find personal-data spans in a free-text field. Read-only — it does **not** tokenise or auto-configure a policy. |
+| Text     | **Scan**             | Find personal-data spans in a free-text field. Read-only — it does **not** tokenise or auto-configure a policy. |
 | Account  | **Get Usage**        | Read the current period usage, quota, and tier.                                                                 |
 
 ### Tokenization methods
@@ -212,7 +215,7 @@ scopes.
 > When an AI agent uses this node as a tool, turn Retry On Fail off: n8n counts
 > each tool retry as a new call. A retry is checked for its API key, rate limit and quota before it is matched,
 > so it can still be refused (for example 402 if the first attempt used up your
-> quota); a refused retry is not billed. Keep Retry On Fail off for Restore and Local restore. Batches bill every
+> quota); a refused retry is not billed. Keep Retry On Fail off for Restore and Local Restore. Batches bill every
 > record sent, including error rows, and running the workflow again or retrying
 > it from the Executions list is a new run and bills again.
 
@@ -247,8 +250,8 @@ for, up to 60 seconds, and sends the same request once more. If the first try is
 still unfinished, the node fails with the "still finishing" error and that try
 is not billed. Every other failure surfaces to you rather than retrying silently.
 
-**Restore and Local restore.** Restore refuses to run with Retry On Fail on: its
-map is destroyed on first hand-over. Tokenize with Return Mode = Local restore
+**Restore and Local Restore.** Restore refuses to run with Retry On Fail on: its
+map is destroyed on first hand-over. Tokenize with Return Mode = Local Restore
 refuses it too: every retry would store another sealed map.
 
 ## Which country's names you get
@@ -273,9 +276,9 @@ The node's `Locale hint` option is a different knob: it sets the top-level
 `country` field, which overrides run-time **formats** (phone and postcode shapes)
 only. It never chooses which country's names are drawn — that is `policy.locale`.
 
-## Local restore
+## Local Restore
 
-Set `Return mode` to **Local restore** on Tokenize to also get your real values
+Set `Return mode` to **Local Restore** on Tokenize to also get your real values
 back inside free text — the AI model's own prose, not just a structured field.
 The map that makes this possible never leaves your control: it is sealed on
 your own n8n with a key only you hold, and the copy Synthaveil stores is bytes
@@ -284,12 +287,12 @@ it cannot open.
 **Setup**
 
 1. Generate a 32-byte key (the credential UI shows the exact command for your
-   OS) and add it as a **Synthaveil Map Key (Local restore)** credential.
+   OS) and add it as a **Synthaveil Map Key (Local Restore) API** credential.
 2. Your API key needs the `restore` scope in addition to `tokenize:read` and
    `tokenize:write` — a tokenize-only key can seal a map but cannot consume it
    for restore. Re-issue or extend your key with `restore` before your first
    Restore run.
-3. Add a **Tokenize** node with `Return mode = Local restore`. It outputs a
+3. Add a **Tokenize** node with `Return mode = Local Restore`. It outputs a
    `synthaveil_map_handle` field alongside the tokenised record.
 4. After your AI step, add a **Restore** node with `Map Handle` pointing at
    that field (`{{ $json.synthaveil_map_handle }}`) and `Text Field` pointing
@@ -309,9 +312,9 @@ happens once. If Restore is retried after that, there is no map left to apply,
 and the node refuses to run at all with Retry On Fail switched on for the
 Restore operation.
 
-**Batch + Local restore is not supported yet.** `Tokenize (Batch)` with
-`Return mode = Local restore` refuses to run rather than silently falling back
-to Record ID behaviour. Use single **Tokenize** for Local restore today.
+**Batch + Local Restore is not supported yet.** `Tokenize (Batch)` with
+`Return mode = Local Restore` refuses to run rather than silently falling back
+to Record ID behaviour. Use single **Tokenize** for Local Restore today.
 
 **If you lose the map key, every sealed map made with it is gone for good.**
 The key never leaves your n8n instance and Synthaveil cannot recover it for
@@ -356,7 +359,8 @@ installed on the instance is available as an agent tool by default.
 
 **0.4.0** — clearer API-key scope guidance: the credential description and the 403
 `insufficient_scope` message now say which scopes to tick. Wording only: existing
-workflows are unchanged.
+workflows are unchanged. The Map Key credential type is `synthaveilMapKeyApi`, named
+to n8n's rules before the first real release.
 
 **Coming soon:** a new method, **L2 — Synthetic Town** (a fictional town or village
 name). It is not in the method dropdown yet; it will be added in a later release once
@@ -376,7 +380,7 @@ Retry On Fail no longer double-bills inside one run (see
 [Batch billing](#batch-billing)). An identical request inside one run is not
 billed again: once the first has finished, it is answered from the stored
 response. Tokenised responses are kept server-side for 30 days so a retry can
-be answered from them. Tokenize with Return Mode = Local restore now refuses to
+be answered from them. Tokenize with Return Mode = Local Restore now refuses to
 run with Retry On Fail on. The node version stays 1, so existing workflows need
 no change.
 
@@ -407,7 +411,6 @@ runs, so a malformed base URL fails at execution time even with the toggle on
 | You see                                                   | What it means                                                          | Do this                                                                              |
 | --------------------------------------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | `dpa_required`                                            | Your organisation has not signed the Data Processing Agreement.        | Sign your DPA in the Synthaveil **portal** (where you signed up and created this key), at the path `/commercial/dpa`. NOT your credential's Base URL — that is the API host `api.synthaveil.com`, which does not serve the portal, so `<baseUrl>/commercial/dpa` goes nowhere. |
-| Credential test fails with **404**                        | The TAAS API is not enabled at this URL, or the Base URL is wrong.     | Check the Base URL and that API access is enabled for your account.                  |
 | Credential test fails with **401**                        | The API key is invalid.                                                | Re-copy the key from the portal.                                                     |
 | Credential test fails with **403** (`insufficient_scope`) | The key is valid but missing a scope.                                  | Re-issue the key with `tokenize:read` (the credential test needs it) and `tokenize:write`, plus `restore` if a Restore step uses it. |
 | `l3_unavailable`                                          | L3 (realistic-data) methods are not enabled for your tenant right now. | Try again later, or choose an L1/L2 method.                                          |

@@ -38,13 +38,17 @@ describe('package manifest', () => {
     expect(pkg.n8n.strict).toBe(true);
     expect(pkg.n8n.credentials).toEqual([
       'dist/credentials/TaasApi.credentials.js',
-      'dist/credentials/SynthaveilMapKey.credentials.js',
+      'dist/credentials/SynthaveilMapKeyApi.credentials.js',
     ]);
     expect(pkg.n8n.nodes).toEqual(['dist/nodes/Taas/Taas.node.js']);
   });
 
   // CC-8 pin: the dist paths above reference file/class names that must never
   // rename, because they are baked into every saved customer workflow.
+  // The Map Key credential was renamed to SynthaveilMapKeyApi/synthaveilMapKeyApi
+  // before the first real release: the only published version so far, 0.0.1, was a
+  // deprecated test-only one, so no customer workflow carries the old name. It is
+  // covered by CC-8 from here on, like the ids below.
   it('CC-8: keeps the internal node/credential ids stable through the rename', () => {
     expect(pkg.n8n.nodes[0]).toBe('dist/nodes/Taas/Taas.node.js');
     expect(pkg.n8n.credentials[0]).toBe('dist/credentials/TaasApi.credentials.js');

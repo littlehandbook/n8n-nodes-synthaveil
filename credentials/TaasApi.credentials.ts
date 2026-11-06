@@ -1,6 +1,19 @@
-import type { Icon, IAuthenticateGeneric, ICredentialType, INodeProperties } from 'n8n-workflow';
+import type {
+  Icon,
+  IAuthenticateGeneric,
+  ICredentialTestRequest,
+  ICredentialType,
+  INodeProperties,
+} from 'n8n-workflow';
 
-import { DEFAULT_BASE_URL } from '../src/constants';
+import {
+  DEFAULT_BASE_URL,
+  HTTP_FORBIDDEN,
+  HTTP_UNAUTHORIZED,
+  REDIRECT_REFUSED_RULES,
+  USAGE_PATH,
+} from '../src/constants';
+import { TEST_BASE_URL_EXPRESSION } from '../src/credentialTestTarget';
 
 /**
  * Credential for the Synthaveil (TAAS) hosted API.
@@ -8,29 +21,24 @@ import { DEFAULT_BASE_URL } from '../src/constants';
  * Auth is a bearer API key issued in the commercial portal with explicit scopes
  * (`tokenize:read`, `tokenize:write`); tokenising additionally requires a signed
  * DPA. The connection check hits the side-effect-free `GET /api/v1/usage`
- * (`tokenize:read`, skips the DPA + quota gates) — it proves the base URL + key
- * connect, but cannot by itself prove write scope or DPA state. Those are
- * surfaced through error mapping + the README funnel (council conditions P3/C5),
- * with a server `GET /api/v1/whoami` backlogged as the proper fix.
+ * (`tokenize:read`, skips the DPA + quota gates) — it proves the key connects,
+ * but cannot by itself prove write scope or DPA state. Those are surfaced
+ * through error mapping + the README funnel (council conditions P3/C5), with a
+ * server `GET /api/v1/whoami` backlogged as the proper fix.
  *
- * There is deliberately NO declarative `test` block here (IT Council SA-C1,
- * QA review of PR #633): a declarative `test.request.baseURL` can only be a
- * static expression, so it cannot refuse an unsafe `baseUrlOverride` (e.g.
- * `http://169.254.169.254`) before n8n builds and sends the request — the
- * Bearer key would go straight to it. The connection check instead runs
- * programmatically as `nodes/Taas/credentialTest.ts`'s `taasApiTest`,
- * registered via `testedBy: 'taasApiTest'` on the credential descriptor in
- * `nodes/Taas/nodeCredentials.ts`, which enforces the same base-URL policy
- * `resolveBaseUrl` uses at execution time before making any request.
- *
- * The `credential-test-required` lint rule's static check only recognises an
- * inline `credentials: [ ... ]` array literal in the node file; `Taas.node.ts`
- * references the imported `TAAS_CREDENTIALS` constant instead
- * (`nodeCredentials.ts`, pre-existing size-budget split), so the rule cannot
- * see the real `testedBy: 'taasApiTest'` entry there and reports a false
- * positive — disabled below with that reasoning.
+ * The declarative `test` below sends the key only to the server the operator
+ * chose (owner decision, 6 Nov 2026, Codex P1 on PR #1741, refining IT Council
+ * SA-C1 of 24 Sep 2026, which had locked it to `DEFAULT_BASE_URL`). With "Allow
+ * non-production URL" on and a non-empty `baseUrlOverride`, the Test targets the
+ * override, but only when it passes a strict subset of execution's
+ * `checkBaseUrlPolicy`; a refused override goes to the reserved
+ * `REFUSED_OVERRIDE_BASE_URL` (`.invalid`) and fails without sending the key
+ * anywhere. Otherwise, including toggle on with an empty override, production.
+ * See `src/credentialTestTarget.ts`. `url` stays a relative path, n8n's generic
+ * `authenticate` adds only the Authorization header, and `disableFollowRedirect`
+ * stops a redirect from carrying the key anywhere else. `$credentials.baseUrl`
+ * is not read: its only option is `DEFAULT_BASE_URL`.
  */
-// eslint-disable-next-line @n8n/community-nodes/credential-test-required -- see class doc comment above; tested via testedBy in nodeCredentials.ts, not visible to this rule's static check
 export class TaasApi implements ICredentialType {
   name = 'taasApi';
 
@@ -63,7 +71,8 @@ export class TaasApi implements ICredentialType {
       default: '',
       description:
         'Activation requires your own Synthaveil API key. Create one in the Synthaveil portal (API Keys) — the node never works without it. ' +
-        'Tick tokenize:read (usage, scan and this credential test) and tokenize:write (tokenise) when you create the key, and restore only if this credential runs a Restore step.',
+        'Tick tokenize:read (usage, scan and this credential test) and tokenize:write (tokenise) when you create the key, and restore only if this credential runs a Restore step. ' +
+        'The Test button sends the key only to the server you chose: api.synthaveil.com, or your Base URL Override when that is on.',
     },
     {
       // A1/I5 escape hatch: relaxes ONLY the synthaveil.com host allow-list
@@ -77,6 +86,16 @@ export class TaasApi implements ICredentialType {
       default: false,
       description:
         'Permit a non-synthaveil.com base URL over https, or plain-http for localhost only. Enforced at execution time; leave off in production.',
+    },
+    {
+      // SA-2: keyed on the toggle alone, not on `baseUrlOverride`, so it is
+      // also shown while the override is still empty.
+      displayName:
+        'The Test button checks your key against the override below, and sends your key only there. While the override is empty it checks api.synthaveil.com instead. An override that is not https (plain http only for localhost) fails the Test without your key being sent anywhere, and the workflow refuses to run with it.',
+      name: 'overrideTestNotice',
+      type: 'notice',
+      default: '',
+      displayOptions: { show: { allowNonProductionUrl: [true] } },
     },
     {
       // The free-text escape hatch for a self-hosted or test endpoint, shown
@@ -106,5 +125,36 @@ export class TaasApi implements ICredentialType {
         Authorization: '=Bearer {{$credentials.apiKey}}',
       },
     },
+  };
+
+  /** Connection check against the chosen server — see the class doc comment. */
+  test: ICredentialTestRequest = {
+    request: {
+      baseURL: TEST_BASE_URL_EXPRESSION,
+      url: USAGE_PATH,
+      method: 'GET',
+      disableFollowRedirect: true,
+    },
+    rules: [
+      {
+        type: 'responseCode',
+        properties: {
+          value: HTTP_UNAUTHORIZED,
+          message:
+            'API key not accepted by api.synthaveil.com. Check the key in the Synthaveil portal (API Keys). ' +
+            'With a Base URL Override on, the key was checked against the override instead.',
+        },
+      },
+      {
+        type: 'responseCode',
+        properties: {
+          value: HTTP_FORBIDDEN,
+          message:
+            'This API key lacks the tokenize:read scope needed for the connection test. ' +
+            'Re-issue it in the portal with tokenize:read and tokenize:write.',
+        },
+      },
+      ...REDIRECT_REFUSED_RULES,
+    ],
   };
 }

@@ -6,7 +6,7 @@ import { taasRequest } from './transport';
 import type { OperationContext } from './singleExecute';
 
 /**
- * Per-item execution glue for the Scan Text operation. Kept out of
+ * Per-item execution glue for the Scan operation. Kept out of
  * `Taas.node.ts` (declaration + dispatch only) and out of `singleExecute.ts`
  * (which owns the token/account ops), mirroring the builder/glue split used
  * across the package.

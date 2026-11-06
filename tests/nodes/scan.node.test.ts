@@ -50,7 +50,7 @@ function mockCtx(opts: MockOptions): { ctx: IExecuteFunctions; http: jest.Mock }
 
 const item = (json: IDataObject): INodeExecutionData => ({ json });
 
-describe('Taas node — Scan Text', () => {
+describe('Taas node — Scan', () => {
   it('POSTs the chosen field to /detect and emits spans + countsByType + rulesetVersion', async () => {
     const { ctx, http } = mockCtx({
       items: [item({ notes: 'Jane Smith called', other: 'keep' })],

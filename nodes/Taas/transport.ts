@@ -54,10 +54,9 @@ export interface TaasRequestOptions {
  * Read the credential and resolve the A1/I5-safe base URL — every operation
  * and the batch path flow through here.
  *
- * Selection itself lives in {@link selectBaseUrl} (`src/baseUrlPolicy.ts`),
- * which the credential Test button calls too: one implementation, so the Test
- * button cannot report success for a credential this function refuses. The
- * rules it applies: the "Allow non-production URL" toggle relaxes the host
+ * Selection itself lives in {@link selectBaseUrl} (`src/baseUrlPolicy.ts`).
+ * The credential Test button never reaches it: that test picks its host with an
+ * n8n expression (`credentials/TaasApi.credentials.ts`). The rules it applies: the "Allow non-production URL" toggle relaxes the host
  * allow-list for a NON-EMPTY `baseUrlOverride` only; the stored `baseUrl` is
  * always judged against the production policy and the options list, so a
  * value that drifted from the dropdown (a workflow JSON exported before the
@@ -134,16 +133,18 @@ export async function taasRequest(
   // same key and body. Anything else, or a second of the same kind, propagates.
   const used = { rateLimit: false, conflict: false };
   for (;;) {
+    let failure: unknown;
     try {
       return await send();
     } catch (error) {
-      const delayMs = nextRetryDelayMs(error, used, { retryOnRateLimit, keyed: headers !== undefined });
-      // Propagate the raw transport error; the calling op wraps it in a
-      // NodeApiError (buildApiError) with per-item context and the mapped message.
-      // eslint-disable-next-line @n8n/community-nodes/require-node-api-error -- see above
-      if (delayMs === undefined) throw error;
-      await sleep(delayMs);
+      failure = error;
     }
+    const delayMs = nextRetryDelayMs(failure, used, { retryOnRateLimit, keyed: headers !== undefined });
+    // Propagate the transport error unchanged: n8n's helper already throws a
+    // NodeApiError, and the calling op (buildApiError) adds the mapped message
+    // and scrubs any other shape, which needs its per-item context.
+    if (delayMs === undefined) throw failure;
+    await sleep(delayMs);
   }
 }
 

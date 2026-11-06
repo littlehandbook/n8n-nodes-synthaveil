@@ -107,6 +107,19 @@ describe('taasRequest', () => {
     expect(http).toHaveBeenCalledTimes(2);
   });
 
+  it('propagates the transport error object itself, for the calling op to wrap and map', async () => {
+    const failure = { statusCode: 500 };
+    const http = jest.fn().mockRejectedValue(failure);
+
+    await expect(
+      taasRequest(ctxWith(http), {
+        baseUrl: 'https://staging.synthaveil.com',
+        method: 'POST',
+        path: '/api/v1/tokenize',
+      }),
+    ).rejects.toBe(failure);
+  });
+
   it('does not retry a non-429 error', async () => {
     const http = jest.fn().mockRejectedValue({ statusCode: 500 });
     const ctx = ctxWith(http);

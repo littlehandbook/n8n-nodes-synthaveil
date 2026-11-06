@@ -51,11 +51,15 @@ jobs:
       # Node 24.0-24.13 ship npm 11.3-11.6.2; staged publishing needs npm
       # >= 11.15.0 (24.18 ships 11.16.0, 24.19 ships 11.17.0). No cache on a
       # release build: a stale cache is how a pinned toolchain quietly regresses.
+      #
+      # No registry-url: setup-node would write an _authToken line backed by a
+      # placeholder token, npm would send that instead of starting the OIDC
+      # exchange, and the registry answers E401 (npm/documentation#1960). npm's
+      # default registry is already registry.npmjs.org.
       - name: Setup Node.js
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
           node-version: '>=24.19'
-          registry-url: https://registry.npmjs.org
 
       # PC-4c. Belt and braces over the version range above: if the resolved npm
       # is older than 11.15.0, `npm stage publish` does not exist and the job must
@@ -63,7 +67,7 @@ jobs:
       - name: Assert npm >= 11.15.0 (staged publishing)
         run: |
           node -e "
-            const v = process.versions.npm;
+            const v = require('child_process').execSync('npm --version', { encoding: 'utf8' }).trim();
             const [maj, min] = v.split('.').map(Number);
             if (maj < 11 || (maj === 11 && min < 15)) {
               throw new Error('npm ' + v + ' < 11.15.0 -- staged publishing unavailable');
@@ -118,6 +122,14 @@ jobs:
       # that the scanner would reject never reaches the registry.
       - name: Scan (local reproduction of the n8n community scanner)
         run: npm run scan:local
+
+      # The real checker n8n runs on community packages. scan:local caught none
+      # of the 15 findings this checker raised before 0.4.0, so it is not enough
+      # on its own. The checker's own CLI exits 0 even when it fails; scan:n8n
+      # reads the result and exits non-zero unless both its source and tarball
+      # legs report `passed`, which fails this job before anything is staged.
+      - name: Scan (official @n8n/scan-community-package)
+        run: npm run scan:n8n
 
       # Stage, do not publish. The version sits in npm's staging area until the
       # founder approves it with a 2FA code (`npm stage approve`, or the Staged

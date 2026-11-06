@@ -2,7 +2,6 @@ import { NodeConnectionTypes } from 'n8n-workflow';
 import type { IExecuteFunctions, INodeExecutionData, INodeType, INodeTypeDescription } from 'n8n-workflow';
 
 import { V1_BATCH_MAX_RECORDS } from '../../src/constants';
-import { taasApiTest } from './credentialTest';
 import { buildApiError, perItemErrorRow } from './errors';
 import { METHOD_OPTIONS } from './methodCatalog';
 import { consistencyProperty } from './properties/consistency';
@@ -112,7 +111,7 @@ export class Taas implements INodeType {
         displayOptions: { show: { resource: ['text'] } },
         options: [
           {
-            name: 'Scan Text',
+            name: 'Scan',
             value: 'scanText',
             description: 'Finds personal data in free text. Does not auto-configure tokenization.',
             action: 'Scan text for personal data',
@@ -245,13 +244,6 @@ export class Taas implements INodeType {
         displayOptions: { show: { resource: ['token'], operation: ['tokenizeBatch'] } },
       },
     ],
-  };
-
-  // Registered via `testedBy: 'taasApiTest'` on the credential descriptor
-  // (`nodeCredentials.ts`) — see `credentialTest.ts` for why this is
-  // programmatic rather than the credential's own declarative `test`.
-  methods = {
-    credentialTest: { taasApiTest },
   };
 
   async execute(this: IExecuteFunctions): Promise<INodeExecutionData[][]> {

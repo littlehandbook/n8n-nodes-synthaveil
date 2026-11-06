@@ -31,7 +31,7 @@ describe('Return Mode gains Local restore + Restore operation (Task 3.2)', () =>
       | { options?: Array<{ name: string; value: string }> }
       | undefined;
     expect(returnMode?.options).toEqual(
-      expect.arrayContaining([expect.objectContaining({ name: 'Local restore', value: 'localRestore' })]),
+      expect.arrayContaining([expect.objectContaining({ name: 'Local Restore', value: 'localRestore' })]),
     );
   });
 
@@ -303,7 +303,7 @@ describe('the Map Key credential resolves the way n8n really resolves it', () =>
    * so the test fails for the same reason the product fails.
    */
   const resolves = (parameters: INodeParameters): boolean => {
-    const descriptor = credentials.find((c) => c.name === 'synthaveilMapKey');
+    const descriptor = credentials.find((c) => c.name === 'synthaveilMapKeyApi');
     if (!descriptor) return false;
     const node = { parameters } as unknown as INode;
     return NodeHelpers.displayParameter(parameters, descriptor, node, description, parameters);
@@ -335,7 +335,7 @@ describe('the Map Key credential resolves the way n8n really resolves it', () =>
   });
 
   it('stays optional, so Return Mode Record ID is not blocked by a key it never uses', () => {
-    const descriptor = credentials.find((c) => c.name === 'synthaveilMapKey');
+    const descriptor = credentials.find((c) => c.name === 'synthaveilMapKeyApi');
     expect(descriptor?.required).toBe(false);
   });
 

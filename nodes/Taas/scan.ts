@@ -4,7 +4,7 @@ import type { IDataObject, INode } from 'n8n-workflow';
 import { V1_DETECT_MAX_CHARS } from '../../src/constants';
 
 /**
- * Pure input resolution for the Scan Text operation. Reads the named text field
+ * Pure input resolution for the Scan operation. Reads the named text field
  * off one input item and validates it against the hosted `/api/v1/detect`
  * contract (non-empty string, ≤100000 chars) BEFORE any network call, so the
  * operator gets a clear per-item error instead of a raw 400. Side-effect-free so
@@ -36,11 +36,9 @@ export function resolveScanText(
 
   const value = itemJson[field];
   if (typeof value !== 'string') {
-    throw new NodeOperationError(
-      node,
-      `Field "${field}" is not text; Scan Text needs a string field.`,
-      { itemIndex },
-    );
+    throw new NodeOperationError(node, `Field "${field}" is not text; Scan needs a string field.`, {
+      itemIndex,
+    });
   }
   if (value.length === 0) {
     throw new NodeOperationError(node, `Field "${field}" is empty; there is nothing to scan.`, {

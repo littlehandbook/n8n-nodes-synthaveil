@@ -7,7 +7,12 @@ import type { INodeProperties } from 'n8n-workflow';
  * fixtures pin this, AC15): the execute path ignores this parameter for that
  * value. `localRestore` (plan P3) seals a map on this n8n install with a key
  * that never leaves it — see `nodes/Taas/sealedMap.ts` and the Restore
- * operation, gated behind the `synthaveilMapKey` credential.
+ * operation, gated behind the `synthaveilMapKeyApi` credential.
+ *
+ * "Local Restore" is Title Case and the G5 sentence (CC-6) is quoted verbatim
+ * minus its final period: both are n8n checker errors otherwise
+ * (`node-param-display-name-miscased`, `node-param-description-excess-final-period`),
+ * and the checker ignores inline `eslint-disable`.
  *
  * The label is Title Case ("Return Mode", not the plan's "Return mode") because
  * n8n's own lint rule `n8n-nodes-base/node-param-display-name-miscased` is an
@@ -30,12 +35,10 @@ export const returnModeProperty: INodeProperties = {
         'Your record ID is never tokenised and survives the AI step. No mapping is stored anywhere by anyone.',
     },
     {
-      // eslint-disable-next-line n8n-nodes-base/node-param-display-name-miscased -- exact string pinned by tests/nodes/restoreExecute.test.ts
-      name: 'Local restore',
+      name: 'Local Restore',
       value: 'localRestore',
-      // eslint-disable-next-line n8n-nodes-base/node-param-description-excess-final-period -- G5 governance sentence (CC-6), quoted verbatim
       description:
-        'The map is sealed on your n8n with a key that never leaves it; Synthaveil stores bytes it cannot open and destroys them the moment it hands the map back (one-shot).',
+        'The map is sealed on your n8n with a key that never leaves it; Synthaveil stores bytes it cannot open and destroys them the moment it hands the map back (one-shot)',
     },
   ],
   description: 'How results come back to you',

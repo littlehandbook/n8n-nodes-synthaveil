@@ -33,6 +33,7 @@
     "format": "prettier --write \"{nodes,credentials,src}/**/*.ts\"",
     "format:check": "prettier --check \"{nodes,credentials,src}/**/*.ts\"",
     "scan:local": "node scripts/scan-local.mjs",
+    "scan:n8n": "node scripts/scan-n8n.mjs",
     "sync:mirror": "node scripts/sync-n8n-mirror.mjs"
   },
   "files": [
@@ -45,19 +46,11 @@
     "strict": true,
     "credentials": [
       "dist/credentials/TaasApi.credentials.js",
-      "dist/credentials/SynthaveilMapKey.credentials.js"
+      "dist/credentials/SynthaveilMapKeyApi.credentials.js"
     ],
     "nodes": [
       "dist/nodes/Taas/Taas.node.js"
     ]
-  },
-  "overrides": {
-    "@langchain/community": {
-      "ignore": "7.0.6"
-    },
-    "@typescript-eslint/eslint-plugin": {
-      "ignore": "7.0.6"
-    }
   },
   "devDependencies": {
     "@n8n/node-cli": "^0.38.8",

@@ -46,11 +46,6 @@ export const TAAS_CREDENTIALS: INodeCredentialDescription[] = [
   {
     name: CREDENTIAL_NAME,
     required: true,
-    // Programmatic connection check (IT Council SA-C1) — see
-    // `credentialTest.ts`'s `taasApiTest`, wired up via `methods.credentialTest`
-    // on `Taas.node.ts`. Replaces a declarative `test` block, which cannot
-    // refuse an unsafe `baseUrlOverride` before the request is built.
-    testedBy: 'taasApiTest',
   },
   {
     name: MAP_KEY_CREDENTIAL_NAME,

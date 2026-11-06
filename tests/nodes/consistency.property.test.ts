@@ -52,13 +52,13 @@ function mockTokenizeCtx(opts: {
   const ctx = {
     getInputData: () => opts.items,
     getCredentials: jest.fn().mockImplementation(async (name: string) =>
-      name === 'synthaveilMapKey'
+      name === 'synthaveilMapKeyApi'
         ? // Chairman fix: a real 32-byte base64 key so deriveContainerKey's
           // fail-closed length check passes in the PUT-/maps sub-test.
           { mapKey: Buffer.alloc(32, 7).toString('base64') }
         : { baseUrl: DEFAULT_BASE_URL, apiKey: 'k' }
     ),
-    getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKey: { id: '2', name: 'map key' } } }),
+    getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKeyApi: { id: '2', name: 'map key' } } }),
     getNodeParameter: (name: string, _i: number, fallback?: unknown) =>
       name in values ? values[name] : fallback,
     getExecutionId: () => opts.executionId ?? 'exec-1',
@@ -101,13 +101,13 @@ function mockBatchCtx(opts: {
   const ctx = {
     getInputData: () => opts.items,
     getCredentials: jest.fn().mockImplementation(async (name: string) =>
-      name === 'synthaveilMapKey'
+      name === 'synthaveilMapKeyApi'
         ? // Chairman fix: a real 32-byte base64 key so deriveContainerKey's
           // fail-closed length check passes in the PUT-/maps sub-test.
           { mapKey: Buffer.alloc(32, 7).toString('base64') }
         : { baseUrl: DEFAULT_BASE_URL, apiKey: 'k' }
     ),
-    getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKey: { id: '2', name: 'map key' } } }),
+    getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKeyApi: { id: '2', name: 'map key' } } }),
     getNodeParameter: (name: string, _i: number, fallback?: unknown) =>
       name in values ? values[name] : fallback,
     getExecutionId: () => opts.executionId ?? 'exec-1',
@@ -253,12 +253,12 @@ describe('execute — consistency: everyRun sends run_id on the Local-restore PU
     const ctx = {
       getInputData: () => [item({ name: 'Helen' })],
       getCredentials: jest.fn().mockImplementation(async (name: string) =>
-        name === 'synthaveilMapKey'
+        name === 'synthaveilMapKeyApi'
           ? // Chairman fix: real 32-byte key for the sealing path.
             { mapKey: Buffer.alloc(32, 7).toString('base64') }
           : { baseUrl: DEFAULT_BASE_URL, apiKey: 'k' }
       ),
-      getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', retryOnFail: false, credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKey: { id: '2', name: 'map key' } } }),
+      getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', retryOnFail: false, credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKeyApi: { id: '2', name: 'map key' } } }),
       getNodeParameter: (name: string, _i: number, fallback?: unknown) =>
         name in values ? values[name] : fallback,
       getExecutionId: () => 'exec-maps-1',
@@ -306,11 +306,11 @@ describe('execute — consistency: everyRun sends run_id on the Local-restore PU
     const ctx = {
       getInputData: () => [item({ name: 'Helen' })],
       getCredentials: jest.fn().mockImplementation(async (name: string) =>
-        name === 'synthaveilMapKey'
+        name === 'synthaveilMapKeyApi'
           ? { mapKey: Buffer.alloc(32, 7).toString('base64') }
           : { baseUrl: DEFAULT_BASE_URL, apiKey: 'k' }
       ),
-      getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', retryOnFail: false, credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKey: { id: '2', name: 'map key' } } }),
+      getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', retryOnFail: false, credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKeyApi: { id: '2', name: 'map key' } } }),
       getNodeParameter: (name: string, _i: number, fallback?: unknown) =>
         name in values ? values[name] : fallback,
       getExecutionId: () => 'exec-maps-2',
@@ -368,11 +368,11 @@ describe('execute — Local restore trims scope_id once, consistently, for both 
     const ctx = {
       getInputData: () => [item({ name: 'Helen' })],
       getCredentials: jest.fn().mockImplementation(async (name: string) =>
-        name === 'synthaveilMapKey'
+        name === 'synthaveilMapKeyApi'
           ? { mapKey: MASTER_KEY }
           : { baseUrl: DEFAULT_BASE_URL, apiKey: 'k' }
       ),
-      getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', retryOnFail: false, credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKey: { id: '2', name: 'map key' } } }),
+      getNode: () => ({ name: 'Synthaveil (TAAS)', type: 'taas', retryOnFail: false, credentials: { taasApi: { id: '1', name: 'acct' }, synthaveilMapKeyApi: { id: '2', name: 'map key' } } }),
       getNodeParameter: (name: string, _i: number, fallback?: unknown) =>
         name in values ? values[name] : fallback,
       getExecutionId: () => 'exec-scope-trim',

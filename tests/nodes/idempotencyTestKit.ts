@@ -120,7 +120,7 @@ export function ctxFor(opts: CtxOptions): IExecuteFunctions {
   return {
     getInputData: () => opts.items,
     getCredentials: jest.fn(async (name: string) =>
-      name === 'synthaveilMapKey' ? { mapKey: MAP_KEY } : { baseUrl: DEFAULT_BASE_URL, apiKey: 'taas_sk_test_fake' },
+      name === 'synthaveilMapKeyApi' ? { mapKey: MAP_KEY } : { baseUrl: DEFAULT_BASE_URL, apiKey: 'taas_sk_test_fake' },
     ),
     getNode: () => ({
       id: opts.nodeId ?? NODE_ID,
@@ -129,7 +129,7 @@ export function ctxFor(opts: CtxOptions): IExecuteFunctions {
       retryOnFail: opts.retryOnFail ?? false,
       credentials: {
         taasApi: { id: '1', name: 'Synthaveil account' },
-        synthaveilMapKey: { id: '2', name: 'Map key' },
+        synthaveilMapKeyApi: { id: '2', name: 'Map key' },
       },
     }),
     getNodeParameter: (name: string, _i: number, fallback?: unknown) => (name in values ? values[name] : fallback),

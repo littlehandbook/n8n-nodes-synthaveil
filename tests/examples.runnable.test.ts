@@ -45,6 +45,29 @@ function nodesForOperation(nodes: WorkflowNode[], operation: string): WorkflowNo
 
 const scopeOf = (node: WorkflowNode): string => String(node.parameters?.scopeId ?? '');
 
+/**
+ * The Map Key credential type is `synthaveilMapKeyApi` (n8n checker naming rules).
+ * An example still naming the old type imports with a dangling credential slot,
+ * so every reference — keys and prose notes — must move.
+ */
+describe.each(workflows.map((w) => w.file))('%s names the renamed Map Key credential', (file) => {
+  const raw = readFileSync(join(EXAMPLES_DIR, file), 'utf8');
+  const doc = workflows.find((w) => w.file === file)!.doc as {
+    nodes?: Array<WorkflowNode & { credentials?: Record<string, unknown> }>;
+  };
+
+  it('every Map Key credential slot uses synthaveilMapKeyApi', () => {
+    const mapKeySlots = (doc.nodes ?? []).flatMap((n) =>
+      Object.keys(n.credentials ?? {}).filter((k) => /mapkey/i.test(k)),
+    );
+    for (const slot of mapKeySlots) expect(slot).toBe('synthaveilMapKeyApi');
+  });
+
+  it('the old synthaveilMapKey type name appears nowhere in the file', () => {
+    expect(raw).not.toMatch(/\bsynthaveilMapKey\b/);
+  });
+});
+
 describe.each(workflows.map((w) => w.file))('%s runs as shipped', (file) => {
   const nodes = workflows.find((w) => w.file === file)!.doc.nodes ?? [];
   const restores = nodesForOperation(nodes, 'restore');

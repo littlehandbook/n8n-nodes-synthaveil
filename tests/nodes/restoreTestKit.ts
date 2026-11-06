@@ -55,7 +55,7 @@ export function mockCtx(opts: MockOptions): IExecuteFunctions {
   return {
     getInputData: () => opts.items,
     getCredentials: jest.fn((name: string) => {
-      if (name === 'synthaveilMapKey') return Promise.resolve({ mapKey: MAP_KEY });
+      if (name === 'synthaveilMapKeyApi') return Promise.resolve({ mapKey: MAP_KEY });
       return Promise.resolve({ baseUrl: DEFAULT_BASE_URL, apiKey: 'k' });
     }),
     getNode: () => ({
@@ -67,7 +67,7 @@ export function mockCtx(opts: MockOptions): IExecuteFunctions {
           ? { taasApi: { id: '1', name: 'Synthaveil account' } }
           : {
               taasApi: { id: '1', name: 'Synthaveil account' },
-              synthaveilMapKey: { id: '2', name: 'Map key' },
+              synthaveilMapKeyApi: { id: '2', name: 'Map key' },
             },
     }),
     getNodeParameter: (name: string, i: number, fallback?: unknown) => {

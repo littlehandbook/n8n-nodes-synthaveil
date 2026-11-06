@@ -161,7 +161,7 @@ describe('Taas node — Return mode property', () => {
   it('also offers Local restore, now that P3 has shipped it', () => {
     const options = returnMode?.options ?? [];
     const localRestore = options.find((o) => o.value === 'localRestore');
-    expect(localRestore?.name).toBe('Local restore');
+    expect(localRestore?.name).toBe('Local Restore');
     expect(localRestore?.description).toContain('sealed on your n8n');
   });
 

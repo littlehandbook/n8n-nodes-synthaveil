@@ -69,9 +69,9 @@
           "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
           "name": "Synthaveil API"
         },
-        "synthaveilMapKey": {
+        "synthaveilMapKeyApi": {
           "id": "REPLACE_WITH_YOUR_MAP_KEY_CREDENTIAL_ID",
-          "name": "Synthaveil Map Key (Local restore)"
+          "name": "Synthaveil Map Key (Local Restore) API"
         }
       }
     },
@@ -106,9 +106,9 @@
           "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
           "name": "Synthaveil API"
         },
-        "synthaveilMapKey": {
+        "synthaveilMapKeyApi": {
           "id": "REPLACE_WITH_YOUR_MAP_KEY_CREDENTIAL_ID",
-          "name": "Synthaveil Map Key (Local restore)"
+          "name": "Synthaveil Map Key (Local Restore) API"
         }
       }
     },
@@ -126,13 +126,13 @@
       "typeVersion": 1,
       "position": [1120, 560],
       "disabled": true,
-      "notes": "AC14 wrong-credential failure journey. Disabled by default and mutually exclusive with \"Synthaveil Restore\" above — a sealed map is one-shot, so only one Restore node can consume it per run. To see the failure: disable \"Synthaveil Restore\", enable this node, and point `synthaveilMapKey` at a DIFFERENT Map Key credential (any key other than the one that sealed this map). The map's outer envelope will not open under the wrong key, so the node returns an AUTH_FAILED-style error rather than any restored — or plaintext — content. This is expected: it is the map key being wrong that fails safe, not a bug in the node.",
+      "notes": "AC14 wrong-credential failure journey. Disabled by default and mutually exclusive with \"Synthaveil Restore\" above — a sealed map is one-shot, so only one Restore node can consume it per run. To see the failure: disable \"Synthaveil Restore\", enable this node, and point `synthaveilMapKeyApi` at a DIFFERENT Map Key credential (any key other than the one that sealed this map). The map's outer envelope will not open under the wrong key, so the node returns an AUTH_FAILED-style error rather than any restored — or plaintext — content. This is expected: it is the map key being wrong that fails safe, not a bug in the node.",
       "credentials": {
         "taasApi": {
           "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
           "name": "Synthaveil API"
         },
-        "synthaveilMapKey": {
+        "synthaveilMapKeyApi": {
           "id": "REPLACE_WITH_A_DIFFERENT_MAP_KEY_CREDENTIAL_ID",
           "name": "Synthaveil Map Key (wrong key, for the failure demo)"
         }
